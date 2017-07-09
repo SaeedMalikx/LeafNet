@@ -4,7 +4,7 @@ import './mainmap.css'
 
 
 let defaultProps = {
-    center: {lat: 59.95, lng: 30.33},
+    center: {lat: 40.73, lng: -73.99},
     zoom: 11
   };
 
