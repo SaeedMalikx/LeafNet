@@ -1,34 +1,58 @@
 import React from 'react'
-import GoogleMapReact from 'google-map-react';
-import './mainmap.css'
+import {connect} from 'react-redux';
+import {Gmaps, Marker, InfoWindow, Circle} from 'react-gmaps';
 
+import { addmarker } from '../actions/userActions';
 
-let defaultProps = {
-    center: {lat: 40.73, lng: -73.99},
-    zoom: 11
-  };
-
-
-let gapikey = 
+const params = {v: '3.exp', key: ''};
 
 class MainMap extends React.Component {
 
 
+  handleMapClick = (event) => {
+    const marker = {
+      lat: event.latLng.lat(),
+      lng: event.latLng.lng()
+    }
+    this.props.addmarker(marker)
+  }
+
+
   render() {
     return (
-      <div className="mapcon">
-        <GoogleMapReact
-        bootstrapURLKeys={{
-            key: gapikey,
-        }}
-        defaultCenter={defaultProps.center}
-        defaultZoom={defaultProps.zoom}
-        >
+        <Gmaps
+          width={'800px'}
+          height={'600px'}
+          lat={51.418981}
+          lng={-0.166303}
+          zoom={12}
+          loadingMessage={'Be happy'}
+          params={params}
+          onMapCreated={this.onMapCreated}
+          onClick={this.handleMapClick}>
+          {this.props.markerlist.map((marker, index) =>(
+                <Marker
+                  key={index}
+                  lat={marker.latitude}
+                  lng={marker.longitude}
+                  draggable={true}
+                  onDragEnd={this.onDragEnd} />
+            ))}
+        </Gmaps>
         
-        </GoogleMapReact>
-      </div>
-    )
+    );
   }
 }
 
-export default MainMap
+const mapStateToProps = (state) => {
+    return {
+      markerlist: state.user.markerlist
+    };
+}
+
+const mapDispatchToProps = dispatch => ({
+    addmarker: marker => dispatch(addmarker(marker)),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(MainMap);
+

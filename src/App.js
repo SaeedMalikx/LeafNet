@@ -9,11 +9,10 @@ import Firebaselogin from './components/firebaselogin'
 
 import { refresh } from './actions/userActions';
 
-import SettingIcon from 'material-ui/svg-icons/action/settings';
 import Mappy from 'material-ui/svg-icons/action/explore';
 import Leafs from 'material-ui/svg-icons/places/spa';
 import Dialog from 'material-ui/Dialog';
-import {grey50, red500, blue500} from 'material-ui/styles/colors';
+import { red500, blue500} from 'material-ui/styles/colors';
 import RaisedButton from 'material-ui/RaisedButton';
 
 
@@ -44,7 +43,9 @@ class App extends Component {
     this.setState({openlogin: false})
   }
 
-
+  checkstate = () => {
+    console.log(this.props.markerlist)
+  }
   render() {
     return (
       <BrowserRouter>
@@ -55,6 +56,7 @@ class App extends Component {
                 <span className="filler"/>
                 <Link to="/myleafs"><Leafs color={red500} style={style.small} /></Link>
                 <Mappy style={style.small} onClick={this.opennewcard} color={blue500} />
+                <Mappy style={style.small} onClick={this.checkstate} />
                 {this.props.isloggedin ? (<RaisedButton label="Profile" secondary={true} onClick={this.openlogin} />)
                                        : (<RaisedButton label="Login" secondary={true} onClick={this.openlogin} />)}
               </div>
@@ -77,7 +79,8 @@ class App extends Component {
 
 const mapStateToProps = (state) => {
     return {
-        isloggedin: state.user.isloggedin
+        isloggedin: state.user.isloggedin,
+        markerlist: state.user.markerlist
     };
 }
 
