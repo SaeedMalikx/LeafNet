@@ -1,4 +1,5 @@
 
+
 .navbar {
   display: flex;
   align-items: center;
@@ -8,18 +9,32 @@
   width: 100%;
   flex-wrap: wrap;
   z-index: 5;
-  padding: 5px;
 }
 
 
 .filler {
   flex-grow: 1;
 }
-
+.selected {
+ text-decoration: none;
+}
 
 .navcontainer {
   display: flex;
   width: 95%;
   margin: auto;
   align-items: center;
+}
+
+
+@media only screen and (max-width: 350px) {
+    .title{
+        font-size: 20px;
+    }
+}
+
+@media only screen and (max-width: 500px) {
+    .navcontainer {
+        width: 100%;
+    }
 }

@@ -8,6 +8,7 @@ let defaultProps = {
     zoom: 11
   };
 
+
 let gapikey = 
 
 class MainMap extends React.Component {

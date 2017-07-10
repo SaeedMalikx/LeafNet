@@ -33,3 +33,19 @@ export const signin = ({email, password}) => dispatch => {
         dispatch({type: "SET_ISLOGGEDIN", payload: true})}
       });
 };
+
+
+
+export const refresh = () => dispatch => {
+    firebase.auth().onAuthStateChanged(user => {
+        if (user != null) {
+            dispatch({type: "SET_ISLOGGEDIN", payload: true})
+        } else {
+            dispatch({type: "SET_ISLOGGEDIN", payload: false})
+        }
+    })
+}
+
+
+
+

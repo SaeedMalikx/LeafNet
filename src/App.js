@@ -1,65 +1,96 @@
 import React, { Component } from 'react';
-import './App.css';
 import {connect} from 'react-redux';
-import { BrowserRouter, Route, Link } from 'react-router-dom'
+import './App.css';
+import { BrowserRouter, Route, Link, NavLink } from 'react-router-dom'
 
+
+import Firebaselogin from './components/firebaselogin'
+
+
+import { refresh } from './actions/userActions';
+
+import SettingIcon from 'material-ui/svg-icons/action/settings';
+import Mappy from 'material-ui/svg-icons/action/explore';
+import Leafs from 'material-ui/svg-icons/places/spa';
 import Dialog from 'material-ui/Dialog';
+import {grey50, red500, blue500} from 'material-ui/styles/colors';
 import RaisedButton from 'material-ui/RaisedButton';
 
-import MainMap from './components/mainmap.js'
-import MyLeafs from './components/myleaf.js'
-import Firebaselogin from './components/firebaselogin.js'
+
+import MyLeafs from './components/myleaf.js';
+import Mainmap from './components/mainmap.js'
 
 class App extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      loginopen: false,
+      newcardopen: false,
+      openlogin: false
+
     };
+  }
+  componentDidMount(){
+    this.props.refresh()
   }
 
   openlogin = () => {
-    this.setState({loginopen: true})
+    this.setState({openlogin: true})
     
   }
 
+
   closelogin = () => {
-    this.setState({loginopen: false})
+    this.setState({openlogin: false})
   }
+
 
   render() {
     return (
       <BrowserRouter>
-          <div className="App">
-            <div className="navbar">
+        <div className="App">
+          <div className="navbar">
               <div className="navcontainer">
-                <Link  to="/"><h1 >Leafnet </h1></Link>
+                <NavLink activeClassName="selected" to="/"><span className="title">Leafnet </span></NavLink>
                 <span className="filler"/>
-                {this.props.isloggedin ? (<RaisedButton label="Logout" secondary={true} onClick={this.openlogin} />)
+                <Link to="/myleafs"><Leafs color={red500} style={style.small} /></Link>
+                <Mappy style={style.small} onClick={this.opennewcard} color={blue500} />
+                {this.props.isloggedin ? (<RaisedButton label="Profile" secondary={true} onClick={this.openlogin} />)
                                        : (<RaisedButton label="Login" secondary={true} onClick={this.openlogin} />)}
               </div>
-            </div>
-
-            <Dialog modal={false} open={this.state.loginopen} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
-                <Firebaselogin/>
-            </Dialog>
-
-            <Route exact path={"/"} component={() => <MainMap/>}/>
-            <Route exact path={"/"} component={() => <MyLeafs/>}/>
           </div>
+
+          <Dialog modal={false} open={this.state.openlogin} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
+                <Firebaselogin/>
+          </Dialog>
+
+          
+          <Route exact path={"/"} component={() => <Mainmap/>}/>
+          <Route exact path={"/myleafs"} component={() => <MyLeafs/>}/>
+        </div>
       </BrowserRouter>
     );
   }
 }
 
+
+
 const mapStateToProps = (state) => {
     return {
-        isloggedin: state.user.isloggedin,
+        isloggedin: state.user.isloggedin
     };
 }
 
 const mapDispatchToProps = dispatch => ({
+  refresh: () => dispatch(refresh())
 });
 
+
+const style = {
+  small: {
+    width: 35,
+    height: 35,
+    padding: 10,
+  }
+};
 export default connect(mapStateToProps, mapDispatchToProps)(App);

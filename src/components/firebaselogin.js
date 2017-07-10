@@ -1,9 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom'
 import {connect} from 'react-redux';
+import firebase from 'firebase';
 
 import './firebaselogin.css'
 
-import { signin, signup } from '../store/actions/userActions';
+import { signin, signup } from '../actions/userActions';
 
 
 
@@ -14,7 +16,7 @@ class firebaselogin extends React.Component {
  
      this.state = {
        email: "",
-       password: "",
+       password: ""
      };
    }
   setuser = (user) => {
@@ -39,13 +41,23 @@ class firebaselogin extends React.Component {
       }
       this.props.signin(user)
   }
-
+  
+  signout = () => {
+    firebase.auth().signOut();
+ 
+  }
   
 
 
   render() {
         return ( 
             <div className="logincenter">
+                { this.props.isloggedin ? (
+                <div>
+                    <Link to="/"><button className="buttonsignup" onClick={this.signout} >Sign Out</button></Link>
+                </div>
+                ) : (<div>
+                    
                     <form >
                         <h3>Email</h3>
                         <input type="text" placeholder="Email" onChange={this.setuser}></input>
@@ -53,10 +65,12 @@ class firebaselogin extends React.Component {
                         <h3>Password</h3>
                         <input type="password" placeholder="Password" onChange={this.setpass}></input>
 
-                        <button className="button" onClick={this.signinuser} >Sign in</button>
+                        <Link to="/"><button className="button" onClick={this.signinuser} >Sign in</button></Link>
                         <h3>Enter Email/Password Above and SignUp Instantly and Login</h3>
-                        <button className="buttonsignup" onClick={this.createuser} >Sign Up</button>
+                        <Link to="/"><button className="buttonsignup" onClick={this.createuser} >Sign Up</button></Link>
+                        
                     </form>
+                </div> )}
             </div>
             
         )
@@ -67,7 +81,7 @@ class firebaselogin extends React.Component {
 
 const mapStateToProps = (state) => {
     return {
-        isloggedin: state.user.isloggedin,
+        isloggedin: state.user.isloggedin
     };
 }
 
@@ -77,3 +91,4 @@ const mapDispatchToProps = dispatch => ({
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(firebaselogin);
+
