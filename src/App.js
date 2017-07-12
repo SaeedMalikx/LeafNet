@@ -2,8 +2,7 @@ import React, { Component } from 'react';
 import './App.css';
 import { BrowserRouter, Route, Link, NavLink } from 'react-router-dom'
 import firebase from 'firebase';
-import {Gmaps, Marker, InfoWindow, Circle} from 'react-gmaps';
-
+import ReactMapboxGl, { Layer, Feature } from "react-mapbox-gl";
 
 
 
@@ -12,11 +11,13 @@ import Leafs from 'material-ui/svg-icons/places/spa';
 import Dialog from 'material-ui/Dialog';
 import { red500, blue500} from 'material-ui/styles/colors';
 import RaisedButton from 'material-ui/RaisedButton';
-import Firebaselogin from './components/firebaselogin'
 
+import Firebaselogin from './components/firebaselogin'
 import MyLeafs from './components/myleaf.js';
 
-const params = {v: '3.exp', key: ''};
+const Map = ReactMapboxGl({
+  accessToken: ""
+});
 
 class App extends Component {
   constructor(props) {
@@ -58,12 +59,12 @@ class App extends Component {
     })
   }
 
-  handleMapClick = (event) => {
+  handleMapClick = (map, evt) => {
     const user = firebase.auth().currentUser;
     if (user != null) {
         firebase.database().ref('users').child(user.uid).child('markers').push({
-            'latitude': event.latLng.lat(),
-            'longitude': event.latLng.lng()
+            'latitude': evt.lngLat.lat,
+            'longitude': evt.lngLat.lng
         })
     }
   }
@@ -92,25 +93,20 @@ class App extends Component {
                                        : (<RaisedButton label="Login" secondary={true} onClick={this.openlogin} />)}
               </div>
           </div>
-           <Gmaps
-              width={'100%'}
-              height={'600px'}
-              lat={51.418981}
-              lng={-0.166303}
-              zoom={12}
-              loadingMessage={'Be happy'}
-              onMapCreated={this.onMapCreated}
-              params={params}
-              onClick={this.handleMapClick}>
-              {this.state.markers.map((marker, index) =>
-                    <Marker
-                      key={index}
-                      lat={marker.latitude}
-                      lng={marker.longitude}
-                      draggable={true}
-                      onDragEnd={this.onDragEnd} />
-                )}
-            </Gmaps>
+           <Map
+              style="mapbox://styles/mapbox/light-v9"
+              onClick={this.handleMapClick}
+              containerStyle={{
+                height: "100vh",
+                width: "100vw"
+              }}>
+                <Layer
+                  type="symbol"
+                  id="marker"
+                  layout={{ "icon-image": "marker-15" }}>
+                  {this.state.markers.map((marker, index)=><Feature key={index} coordinates={[marker.longitude, marker.latitude]}/>)}
+                </Layer>
+            </Map>
 
           <Dialog modal={false} open={this.state.openlogin} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
                 <Firebaselogin isloggedin={this.state.isloggedin}/>
