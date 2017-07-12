@@ -2,12 +2,14 @@ import React, { Component } from 'react';
 import './App.css';
 import { BrowserRouter, Route, Link, NavLink } from 'react-router-dom'
 import firebase from 'firebase';
-import ReactMapboxGl, { Layer, Feature } from "react-mapbox-gl";
+import ReactMapboxGl, { Layer, Feature, Popup } from "react-mapbox-gl";
 
 
 
 import Mappy from 'material-ui/svg-icons/action/explore';
 import Leafs from 'material-ui/svg-icons/places/spa';
+import Popcancel from 'material-ui/svg-icons/navigation/cancel'
+import Popmore from 'material-ui/svg-icons/navigation/arrow-forward'
 import Dialog from 'material-ui/Dialog';
 import { red500, blue500} from 'material-ui/styles/colors';
 import RaisedButton from 'material-ui/RaisedButton';
@@ -26,7 +28,9 @@ class App extends Component {
     this.state = {
       isloggedin: false,
       openlogin: false,
-      markers: []
+      markers: [],
+      popuplat: "",
+      popuplng: ""
 
     };
   }
@@ -45,6 +49,7 @@ class App extends Component {
                     let markerlist = [];
                     for (let mark in marks) {
                         markerlist.push({
+                          key: mark,
                             latitude: marks[mark].latitude,
                             longitude: marks[mark].longitude,
                         })
@@ -78,6 +83,13 @@ class App extends Component {
     this.setState({openlogin: false})
   }
 
+  leafclick = (e) => {
+    this.setState({popuplat: e.lngLat.lat, popuplng: e.lngLat.lng})
+  }
+
+  clearpopup = () => {
+    this.setState({popuplat: "", popuplng: ""})
+  }
   
   render() {
     return (
@@ -95,7 +107,7 @@ class App extends Component {
           </div>
            <Map
               style="mapbox://styles/mapbox/light-v9"
-              onClick={this.handleMapClick}
+              onDblClick={this.handleMapClick}
               containerStyle={{
                 height: "100vh",
                 width: "100vw"
@@ -103,17 +115,32 @@ class App extends Component {
                 <Layer
                   type="symbol"
                   id="marker"
-                  layout={{ "icon-image": "marker-15" }}>
-                  {this.state.markers.map((marker, index)=><Feature key={index} coordinates={[marker.longitude, marker.latitude]}/>)}
+                  layout={{ "icon-image": "square-15" }}>
+                  {this.state.markers.map((marker, index)=><Feature 
+                                                            key={index} 
+                                                            onClick={this.leafclick}
+                                                            coordinates={[marker.longitude, marker.latitude]}
+                                                            />)}
                 </Layer>
+                <Popup
+                  coordinates={[this.state.popuplng,this.state.popuplat]}
+                  offset={{
+                    'bottom-left': [12, -38],  'bottom': [0, -38], 'bottom-right': [-12, -38]
+                  }}>
+                  <p>Small Note</p>
+                  <Popcancel onClick={this.clearpopup}/>
+                  <Popmore onClick={this.openleaf}/>
+                </Popup>
             </Map>
 
           <Dialog modal={false} open={this.state.openlogin} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
                 <Firebaselogin isloggedin={this.state.isloggedin}/>
           </Dialog>
 
-          
-          <Route exact path={"/myleafs"} component={() => <MyLeafs/>}/>
+          <Dialog modal={false} open={this.state.openlogin} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
+                <MyLeafs/>
+          </Dialog>
+
         </div>
       </BrowserRouter>
     );
