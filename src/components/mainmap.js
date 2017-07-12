@@ -1,27 +1,37 @@
 import React from 'react'
-import {connect} from 'react-redux';
 import {Gmaps, Marker, InfoWindow, Circle} from 'react-gmaps';
+import firebase from 'firebase';
 
-import { addmarker } from '../actions/userActions';
 
-const params = {v: '3.exp', key: ''};
+const params = {v: '3.exp', key: 'AIzaSyC07RdgEE83owZKfEJN_6WsS6J64R9UnLo'};
 
-class MainMap extends React.Component {
+export default class MainMap extends React.Component {
 
+  
 
   handleMapClick = (event) => {
-    const marker = {
-      lat: event.latLng.lat(),
-      lng: event.latLng.lng()
+    const user = firebase.auth().currentUser;
+    if (user != null) {
+        firebase.database().ref('users').child(user.uid).child('markers').push({
+            'latitude': event.latLng.lat(),
+            'longitude': event.latLng.lng()
+        })
     }
-    this.props.addmarker(marker)
   }
 
+  shouldComponentUpdate(nextProps, nextState){
+    if(this.props.center === nextProps.center){
+      return false
+    }else{
+      return true
+    }
+  }
 
   render() {
     return (
+        <div>
         <Gmaps
-          width={'800px'}
+          width={'100%'}
           height={'600px'}
           lat={51.418981}
           lng={-0.166303}
@@ -30,29 +40,18 @@ class MainMap extends React.Component {
           params={params}
           onMapCreated={this.onMapCreated}
           onClick={this.handleMapClick}>
-          {this.props.markerlist.map((marker, index) =>(
+          {this.props.markers.map((marker, index) =>
                 <Marker
                   key={index}
                   lat={marker.latitude}
                   lng={marker.longitude}
                   draggable={true}
                   onDragEnd={this.onDragEnd} />
-            ))}
+            )}
         </Gmaps>
-        
+        </div>
     );
   }
 }
 
-const mapStateToProps = (state) => {
-    return {
-      markerlist: state.user.markerlist
-    };
-}
-
-const mapDispatchToProps = dispatch => ({
-    addmarker: marker => dispatch(addmarker(marker)),
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(MainMap);
 

@@ -1,16 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom'
-import {connect} from 'react-redux';
 import firebase from 'firebase';
 
 import './firebaselogin.css'
 
-import { signin, signup } from '../actions/userActions';
 
 
 
-
-class firebaselogin extends React.Component {
+export default class firebaselogin extends React.Component {
   constructor(props) {
      super(props);
  
@@ -24,24 +21,40 @@ class firebaselogin extends React.Component {
   }
 
   setpass = (pass) => {
-      this.setState({password: pass.target.value})
+      this.setState({password: pass.target.value}) 
   }
   createuser = () => {
-      const user = {
-          email: this.state.email,
-          password: this.state.password
-      }
-      this.props.signup(user)
+    firebase.auth().createUserWithEmailAndPassword(this.state.email, this.state.password)
+      .catch(error => {
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        if (errorCode === 'auth/weak-password') {
+          alert('The password is too weak.');
+        } else {
+          alert(errorMessage);
+        }
+        console.log(error);})
+      .then(user =>{
+      this.setState({uinfo: user.uid})
+    });
   }
 
   signinuser = () => {
-      const user = {
-          email: this.state.email,
-          password: this.state.password
-      }
-      this.props.signin(user)
+    firebase.auth().signInWithEmailAndPassword(this.state.email, this.state.password)
+        .catch(function(error) {
+            var errorCode = error.code;
+            var errorMessage = error.message;
+            if (errorCode === 'auth/wrong-password') {
+                alert('Wrong password.');
+            } else {
+                alert(errorMessage);
+            }
+            console.log(error);
+            })
+      .then(user =>{
+      this.setState({uinfo: user})
+    });
   }
-  
   signout = () => {
     firebase.auth().signOut();
  
@@ -77,18 +90,4 @@ class firebaselogin extends React.Component {
     }
 }
 
-
-
-const mapStateToProps = (state) => {
-    return {
-        isloggedin: state.user.isloggedin
-    };
-}
-
-const mapDispatchToProps = dispatch => ({
-    signin: user => dispatch(signin(user)),
-    signup: user => dispatch(signup(user))
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(firebaselogin);
 
