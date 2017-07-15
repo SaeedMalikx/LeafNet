@@ -16,10 +16,8 @@ import RaisedButton from 'material-ui/RaisedButton';
 
 import Firebaselogin from './components/firebaselogin'
 import MyLeafs from './components/myleaf.js';
+import Map from './components/map.js'
 
-const Map = ReactMapboxGl({
-  accessToken: ""
-});
 
 class App extends Component {
   constructor(props) {
@@ -28,9 +26,11 @@ class App extends Component {
     this.state = {
       isloggedin: false,
       openlogin: false,
+      openleaf: false,
       markers: [],
       popuplat: "",
-      popuplng: ""
+      popuplng: "",
+      userid: ""
 
     };
   }
@@ -49,14 +49,14 @@ class App extends Component {
                     let markerlist = [];
                     for (let mark in marks) {
                         markerlist.push({
-                          key: mark,
+                            key: mark,
                             latitude: marks[mark].latitude,
                             longitude: marks[mark].longitude,
+                            title: marks[mark].title
                         })
                         this.setState({markers: markerlist})
                     }
-                } else {
-                } 
+                }
             });
         } else {
           this.setState({isloggedin: false, markers: []})
@@ -64,33 +64,13 @@ class App extends Component {
     })
   }
 
-  handleMapClick = (map, evt) => {
-    const user = firebase.auth().currentUser;
-    if (user != null) {
-        firebase.database().ref('users').child(user.uid).child('markers').push({
-            'latitude': evt.lngLat.lat,
-            'longitude': evt.lngLat.lng
-        })
-    }
-  }
-  openlogin = () => {
-    this.setState({openlogin: true})
-    
-  }
-
+  openlogin = () => {this.setState({openlogin: true})}
+  openleaf = () => {this.setState({openleaf: true})}
 
   closelogin = () => {
-    this.setState({openlogin: false})
+    this.setState({openlogin: false, openleaf: false})
   }
 
-  leafclick = (e) => {
-    this.setState({popuplat: e.lngLat.lat, popuplng: e.lngLat.lng})
-  }
-
-  clearpopup = () => {
-    this.setState({popuplat: "", popuplng: ""})
-  }
-  
   render() {
     return (
       <BrowserRouter>
@@ -99,45 +79,20 @@ class App extends Component {
               <div className="navcontainer">
                 <NavLink activeClassName="selected" to="/"><span className="title">Leafnet </span></NavLink>
                 <span className="filler"/>
-                <Link to="/myleafs"><Leafs color={red500} style={style.small} /></Link>
-                <Mappy style={style.small} onClick={this.opennewcard} color={blue500} />
+                <Leafs color={red500} onClick={this.openleaf} style={style.small} />
+                <Mappy style={style.small} onClick={this.openleaf} color={blue500} />
                 {this.state.isloggedin ? (<RaisedButton label="Profile" secondary={true} onClick={this.openlogin} />)
                                        : (<RaisedButton label="Login" secondary={true} onClick={this.openlogin} />)}
               </div>
           </div>
-           <Map
-              style="mapbox://styles/mapbox/light-v9"
-              onDblClick={this.handleMapClick}
-              containerStyle={{
-                height: "100vh",
-                width: "100vw"
-              }}>
-                <Layer
-                  type="symbol"
-                  id="marker"
-                  layout={{ "icon-image": "square-15" }}>
-                  {this.state.markers.map((marker, index)=><Feature 
-                                                            key={index} 
-                                                            onClick={this.leafclick}
-                                                            coordinates={[marker.longitude, marker.latitude]}
-                                                            />)}
-                </Layer>
-                <Popup
-                  coordinates={[this.state.popuplng,this.state.popuplat]}
-                  offset={{
-                    'bottom-left': [12, -38],  'bottom': [0, -38], 'bottom-right': [-12, -38]
-                  }}>
-                  <p>Small Note</p>
-                  <Popcancel onClick={this.clearpopup}/>
-                  <Popmore onClick={this.openleaf}/>
-                </Popup>
-            </Map>
+
+          <Map userid={this.state.userid} markers={this.state.markers}/>
 
           <Dialog modal={false} open={this.state.openlogin} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
                 <Firebaselogin isloggedin={this.state.isloggedin}/>
           </Dialog>
 
-          <Dialog modal={false} open={this.state.openlogin} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
+          <Dialog modal={false} open={this.state.openleaf} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
                 <MyLeafs/>
           </Dialog>
 
@@ -146,11 +101,6 @@ class App extends Component {
     );
   }
 }
-
-
-
-
-
 
 const style = {
   small: {
