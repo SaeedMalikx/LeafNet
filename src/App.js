@@ -17,6 +17,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 import Firebaselogin from './components/firebaselogin'
 import MyLeafs from './components/myleaf.js';
 import Map from './components/map.js'
+import GlobalMap from './components/globalmap.js'
 
 
 class App extends Component {
@@ -28,14 +29,17 @@ class App extends Component {
       openlogin: false,
       openleaf: false,
       markers: [],
+      globalmarkers: [],
       popuplat: "",
       popuplng: "",
-      userid: ""
+      userid: "",
+      showusermap: false
 
     };
   }
   componentDidMount(){
     this.getmarkers()
+    this.getglobalmarkers()
   }
 
   getmarkers = () => {
@@ -49,10 +53,11 @@ class App extends Component {
                     let markerlist = [];
                     for (let mark in marks) {
                         markerlist.push({
-                            key: mark,
+                            postkey: mark,
                             latitude: marks[mark].latitude,
                             longitude: marks[mark].longitude,
-                            title: marks[mark].title
+                            title: marks[mark].title,
+                            globalvalue: marks[mark].global
                         })
                         this.setState({markers: markerlist})
                     }
@@ -63,6 +68,37 @@ class App extends Component {
         }
     })
   }
+  getglobalmarkers = () => {
+    firebase.auth().onAuthStateChanged(user => {
+       if (user != null) {
+           
+            firebase.database().ref('global').child('markers').on('value', snap =>{
+                
+                if (snap.val()) {
+                    let marks = snap.val();
+                    let markerlist = [];
+                    for (let mark in marks) {
+                        markerlist.push({
+                            feedkey: mark,
+                            latitude: marks[mark].latitude,
+                            longitude: marks[mark].longitude,
+                            title: marks[mark].title,
+                            userid: marks[mark].userid
+                        })
+                        this.setState({globalmarkers: markerlist})
+                    }
+                }
+            });
+        } else {
+          this.setState({globalmarkers: []})
+        }
+    })
+  }
+  showusermap = () => {
+    const user = firebase.auth().currentUser;
+    if (user != null) {
+        this.setState({showusermap: true})
+  }}
 
   openlogin = () => {this.setState({openlogin: true})}
   openleaf = () => {this.setState({openleaf: true})}
@@ -80,13 +116,13 @@ class App extends Component {
                 <NavLink activeClassName="selected" to="/"><span className="title">Leafnet </span></NavLink>
                 <span className="filler"/>
                 <Leafs color={red500} onClick={this.openleaf} style={style.small} />
-                <Mappy style={style.small} onClick={this.openleaf} color={blue500} />
+                <Mappy style={style.small} onClick={this.showusermap} color={blue500} />
                 {this.state.isloggedin ? (<RaisedButton label="Profile" secondary={true} onClick={this.openlogin} />)
                                        : (<RaisedButton label="Login" secondary={true} onClick={this.openlogin} />)}
               </div>
           </div>
 
-          <Map userid={this.state.userid} markers={this.state.markers}/>
+          {this.state.showusermap ? (<Map userid={this.state.userid} markers={this.state.markers}/>):(<GlobalMap globalmarkers={this.state.globalmarkers}/>)}
 
           <Dialog modal={false} open={this.state.openlogin} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
                 <Firebaselogin isloggedin={this.state.isloggedin}/>

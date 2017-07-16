@@ -26,7 +26,8 @@ class Mainmap extends React.Component {
       addertitle: "",
       openfeed: false,
       currenttitle: "",
-      feedkey: ""
+      feedkey: "",
+      globalvalue: ""
     };
   }
 
@@ -45,21 +46,51 @@ class Mainmap extends React.Component {
   addtodb = () => {
     const user = firebase.auth().currentUser;
     if (user != null) {
-        firebase.database().ref('users').child(user.uid).child('mark').push({
+        firebase.database().ref('users').child(user.uid).child('markers').push({
             'latitude': this.state.addpopuplat,
             'longitude': this.state.addpopuplng,
-            'title': this.state.addertitle
+            'title': this.state.addertitle,
+            'global': false
         })
     }
     this.setState({openadder: false,addpopuplat: "" , addpopuplng: ""})
   }
 
-  leafclick = (e, title, key) => {
-    this.setState({popuplat: e.lngLat.lat, popuplng: e.lngLat.lng, currentitle: title})
+  publishpost = () => {
+    const user = firebase.auth().currentUser;
+    if (user != null) {
+        firebase.database().ref('global').child('markers').child(this.state.feedkey).set({
+            'latitude': this.state.popuplat,
+            'longitude': this.state.popuplng,
+            'title': this.state.currentitle,
+            'feedkey': this.state.feedkey,
+            'userid': user.uid
+        })
+        firebase.database().ref('global').child('posts').child(this.state.feedkey).set({
+            'title': this.state.currentitle,
+        })
+        firebase.database().ref('users').child(user.uid).child('markers').child(this.state.feedkey).update({
+            'global': true
+        })
+    }
+  }
+  unpublishpost = () => {
+      const user = firebase.auth().currentUser;
+      if (user != null) {
+        firebase.database().ref('global').child('markers').child(this.state.feedkey).remove()
+        firebase.database().ref('users').child(user.uid).child('markers').child(this.state.feedkey).update({
+            'global': false
+        })
+        firebase.database().ref('global').child('posts').child(this.state.feedkey).remove()
+    }
+  }
+
+  leafclick = (e, title, key, gv) => {
+    this.setState({popuplat: e.lngLat.lat, popuplng: e.lngLat.lng, currentitle: title, feedkey: key, globalvalue: gv}, console.log(key))
   }
 
   clearpopup = () => {
-    this.setState({popuplat: "", popuplng: ""})
+    this.setState({popuplat: "", popuplng: "",currentitle: "", feedkey: ""})
   }
   render() {
     return (
@@ -77,7 +108,7 @@ class Mainmap extends React.Component {
                   layout={{ "icon-image": "square-15" }}>
                   {this.props.markers.map((marker, index)=><Feature 
                                                             key={index} 
-                                                            onClick={(e)=>{this.leafclick(e, marker.title, marker.key)}}
+                                                            onClick={(e)=>{this.leafclick(e, marker.title, marker.postkey, marker.globalvalue)}}
                                                             coordinates={[marker.longitude, marker.latitude]}
                                                             />)}
                 </Layer>
@@ -89,6 +120,7 @@ class Mainmap extends React.Component {
                   <p>{this.state.currentitle}</p>
                   <Popcancel onClick={this.clearpopup}/>
                   <Popmore onClick={this.openfeed}/>
+                  {this.state.globalvalue ? (<RaisedButton label="UnPublish" secondary={true}  onClick={this.unpublishpost}/>):(<RaisedButton label="Publish" secondary={true}  onClick={this.publishpost}/>)}
                 </Popup>
                 <Popup
                   coordinates={[this.state.addpopuplng,this.state.addpopuplat]}
