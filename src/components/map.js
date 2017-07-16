@@ -9,6 +9,10 @@ import Popmore from 'material-ui/svg-icons/navigation/arrow-forward'
 import Adder from 'material-ui/svg-icons/content/add-box'
 import Dialog from 'material-ui/Dialog';
 import RaisedButton from 'material-ui/RaisedButton';
+import {List, ListItem} from 'material-ui/List';
+import Divider from 'material-ui/Divider';
+import Subheader from 'material-ui/Subheader';
+import Avatar from 'material-ui/Avatar';
 
 const Map = ReactMapboxGl({
   accessToken: ""
@@ -18,6 +22,7 @@ class Mainmap extends React.Component {
     super(props);
 
     this.state = {
+      allowpopup: false,
       popuplat: "",
       popuplng: "",
       addpopuplat: "",
@@ -27,11 +32,12 @@ class Mainmap extends React.Component {
       openfeed: false,
       currenttitle: "",
       feedkey: "",
-      globalvalue: ""
+      globalvalue: "",
+      feedcommentlist: [],
+      currentcomment: ""
     };
   }
 
-  openfeed = () => {this.setState({openfeed: true})}
   openadder = () => {this.setState({openadder: true})}
   closefeed = () => {this.setState({openfeed: false, openadder: false})}
 
@@ -86,11 +92,43 @@ class Mainmap extends React.Component {
   }
 
   leafclick = (e, title, key, gv) => {
-    this.setState({popuplat: e.lngLat.lat, popuplng: e.lngLat.lng, currentitle: title, feedkey: key, globalvalue: gv}, console.log(key))
+    this.setState({allowpopup: true, popuplat: e.lngLat.lat, popuplng: e.lngLat.lng, currentitle: title, feedkey: key, globalvalue: gv}, console.log(key))
   }
 
   clearpopup = () => {
-    this.setState({popuplat: "", popuplng: "",currentitle: "", feedkey: ""})
+    this.setState({popuplat: "", popuplng: "",currentitle: "", feedkey: "", allowpopup: false})
+  }
+
+  openfeed = () => {
+      
+    firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').on('value', snap =>{
+                
+                if (snap.val()) {
+                    let comments = snap.val();
+                    let commentlist = [];
+                    for (let comment in comments) {
+                        commentlist.push({
+                            commentkey: comment,
+                            body: comments[comment].body,
+                        })
+                        this.setState({feedcommentlist: commentlist})
+                    }
+                }
+    });
+    this.setState({openfeed: true})
+  }
+
+  setcomment = (comment) => {
+      this.setState({currentcomment: comment.target.value})
+  }
+
+  addcomment = () => {
+    const user = firebase.auth().currentUser;
+    if (user != null) {
+        firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').push({
+            'body': this.state.currentcomment,
+        })
+    }
   }
   render() {
     return (
@@ -112,7 +150,7 @@ class Mainmap extends React.Component {
                                                             coordinates={[marker.longitude, marker.latitude]}
                                                             />)}
                 </Layer>
-                <Popup
+                {this.state.allowpopup ?(<Popup
                   coordinates={[this.state.popuplng,this.state.popuplat]}
                   offset={{
                     'bottom-left': [12, -38],  'bottom': [0, -38], 'bottom-right': [-12, -38]
@@ -121,7 +159,7 @@ class Mainmap extends React.Component {
                   <Popcancel onClick={this.clearpopup}/>
                   <Popmore onClick={this.openfeed}/>
                   {this.state.globalvalue ? (<RaisedButton label="UnPublish" secondary={true}  onClick={this.unpublishpost}/>):(<RaisedButton label="Publish" secondary={true}  onClick={this.publishpost}/>)}
-                </Popup>
+                </Popup>):(<div></div>)}
                 <Popup
                   coordinates={[this.state.addpopuplng,this.state.addpopuplat]}
                   offset={{
@@ -140,7 +178,30 @@ class Mainmap extends React.Component {
           </Dialog>
 
           <Dialog modal={false} open={this.state.openfeed} onRequestClose={this.closefeed} autoDetectWindowHeight={true}>
-                
+                <Dialog 
+                  modal={false} 
+                  open={this.state.openfeed} 
+                  onRequestClose={this.closefeed} 
+                  autoScrollBodyContent={true} 
+                  autoDetectWindowHeight={true}
+                  contentClassName="dialogwidth"
+                  title={this.state.currentitle}
+                  actions={[<input type="text" placeholder="Add a Comment" onChange={this.setcomment}></input>,
+                      <RaisedButton label="Submit" primary={true} onClick={this.addcomment} />]}
+                >
+                      <List>
+                          {this.state.feedcommentlist.map((comment, index)=>
+                              <ListItem
+                              key={comment.commentkey}
+                              leftAvatar={<Avatar src="" />}
+                              secondaryText={
+                                  <p>
+                                  {comment.body}
+                                  </p>
+                              }
+                          />)}
+                      </List>
+                </Dialog>
           </Dialog>
 
       </div>

@@ -30,8 +30,6 @@ class App extends Component {
       openleaf: false,
       markers: [],
       globalmarkers: [],
-      popuplat: "",
-      popuplng: "",
       userid: "",
       showusermap: false
 
