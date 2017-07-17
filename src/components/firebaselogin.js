@@ -1,11 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom'
 import firebase from 'firebase';
 
 import './firebaselogin.css'
 
-
-
+import Avatar from 'material-ui/Avatar';
+import Popicon from 'material-ui/svg-icons/action/announcement'
+import List from 'material-ui/List/List';
+import ListItem from 'material-ui/List/ListItem';
 
 export default class firebaselogin extends React.Component {
   constructor(props) {
@@ -67,7 +68,23 @@ export default class firebaselogin extends React.Component {
             <div className="logincenter">
                 { this.props.isloggedin ? (
                 <div>
-                    <Link to="/"><button className="buttonsignup" onClick={this.signout} >Sign Out</button></Link>
+                    <List>
+                        <ListItem
+                            disabled={true}
+                            leftAvatar={
+                                <Avatar icon={<Popicon/>} />
+                            }
+                        >
+                            {this.props.userid}
+                        </ListItem>
+                        <ListItem
+                            disabled={true}
+                            leftIcon={<Popicon />}
+                        >
+                            {this.props.markers.length}
+                        </ListItem>
+                        <button className="buttonsignup" onClick={this.signout} >Sign Out</button>
+                    </List>
                 </div>
                 ) : (<div>
                     
@@ -78,9 +95,9 @@ export default class firebaselogin extends React.Component {
                         <h3>Password</h3>
                         <input type="password" placeholder="Password" onChange={this.setpass}></input>
 
-                        <Link to="/"><button className="button" onClick={this.signinuser} >Sign in</button></Link>
+                        <button className="button" onClick={this.signinuser} >Sign in</button>
                         <h3>Enter Email/Password Above and SignUp Instantly and Login</h3>
-                        <Link to="/"><button className="buttonsignup" onClick={this.createuser} >Sign Up</button></Link>
+                        <button className="buttonsignup" onClick={this.createuser} >Sign Up</button>
                         
                     </form>
                 </div> )}

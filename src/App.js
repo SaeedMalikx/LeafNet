@@ -1,21 +1,16 @@
 import React, { Component } from 'react';
 import './App.css';
-import { BrowserRouter, Route, Link, NavLink } from 'react-router-dom'
 import firebase from 'firebase';
-import ReactMapboxGl, { Layer, Feature, Popup } from "react-mapbox-gl";
 
 
 
 import Mappy from 'material-ui/svg-icons/action/explore';
 import Leafs from 'material-ui/svg-icons/places/spa';
-import Popcancel from 'material-ui/svg-icons/navigation/cancel'
-import Popmore from 'material-ui/svg-icons/navigation/arrow-forward'
 import Dialog from 'material-ui/Dialog';
 import { red500, blue500} from 'material-ui/styles/colors';
 import RaisedButton from 'material-ui/RaisedButton';
 
 import Firebaselogin from './components/firebaselogin'
-import MyLeafs from './components/myleaf.js';
 import Map from './components/map.js'
 import GlobalMap from './components/globalmap.js'
 
@@ -27,7 +22,6 @@ class App extends Component {
     this.state = {
       isloggedin: false,
       openlogin: false,
-      openleaf: false,
       markers: [],
       globalmarkers: [],
       userid: "",
@@ -43,7 +37,7 @@ class App extends Component {
   getmarkers = () => {
   firebase.auth().onAuthStateChanged(user => {
        if (user != null) {
-            this.setState({isloggedin: true})
+            this.setState({isloggedin: true, userid: user.email})
             firebase.database().ref('users').child(user.uid).child('markers').on('value', snap =>{
                 
                 if (snap.val()) {
@@ -59,10 +53,12 @@ class App extends Component {
                         })
                         this.setState({markers: markerlist})
                     }
+                } else {
+                  this.setState({markers: []})
                 }
             });
         } else {
-          this.setState({isloggedin: false, markers: []})
+          this.setState({isloggedin: false, markers: [], userid: ""})
         }
     })
   }
@@ -85,7 +81,7 @@ class App extends Component {
                         })
                         this.setState({globalmarkers: markerlist})
                     }
-                }
+                } 
             });
         } else {
           this.setState({globalmarkers: []})
@@ -97,24 +93,25 @@ class App extends Component {
     if (user != null) {
         this.setState({showusermap: true})
   }}
+  showglobalmap = () => {
+    this.setState({showusermap: false})
+  }
 
   openlogin = () => {this.setState({openlogin: true})}
-  openleaf = () => {this.setState({openleaf: true})}
 
   closelogin = () => {
-    this.setState({openlogin: false, openleaf: false})
+    this.setState({openlogin: false})
   }
 
   render() {
     return (
-      <BrowserRouter>
         <div className="App">
           <div className="navbar">
               <div className="navcontainer">
-                <NavLink activeClassName="selected" to="/"><span className="title">Leafnet </span></NavLink>
+                <span className="title">Leafnet </span>
                 <span className="filler"/>
-                <Leafs color={red500} onClick={this.openleaf} style={style.small} />
-                <Mappy style={style.small} onClick={this.showusermap} color={blue500} />
+                <Leafs color={red500} onClick={this.showusermap} style={style.small} />
+                <Mappy style={style.small} onClick={this.showglobalmap} color={blue500} />
                 {this.state.isloggedin ? (<RaisedButton label="Profile" secondary={true} onClick={this.openlogin} />)
                                        : (<RaisedButton label="Login" secondary={true} onClick={this.openlogin} />)}
               </div>
@@ -123,15 +120,9 @@ class App extends Component {
           {this.state.showusermap ? (<Map userid={this.state.userid} markers={this.state.markers}/>):(<GlobalMap globalmarkers={this.state.globalmarkers}/>)}
 
           <Dialog modal={false} open={this.state.openlogin} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
-                <Firebaselogin isloggedin={this.state.isloggedin}/>
+                <Firebaselogin isloggedin={this.state.isloggedin} markers={this.state.markers} userid={this.state.userid}/>
           </Dialog>
-
-          <Dialog modal={false} open={this.state.openleaf} onRequestClose={this.closelogin} autoDetectWindowHeight={true}>
-                <MyLeafs/>
-          </Dialog>
-
         </div>
-      </BrowserRouter>
     );
   }
 }
