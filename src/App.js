@@ -49,7 +49,9 @@ class App extends Component {
                             latitude: marks[mark].latitude,
                             longitude: marks[mark].longitude,
                             title: marks[mark].title,
-                            globalvalue: marks[mark].global
+                            globalvalue: marks[mark].global,
+                            commentcount: marks[mark].commentcount,
+                            upvotes: marks[mark].upvotes
                         })
                         this.setState({markers: markerlist})
                     }
@@ -77,7 +79,9 @@ class App extends Component {
                             latitude: marks[mark].latitude,
                             longitude: marks[mark].longitude,
                             title: marks[mark].title,
-                            userid: marks[mark].userid
+                            userid: marks[mark].userid,
+                            commentcount: marks[mark].commentcount,
+                            upvotes: marks[mark].upvotes
                         })
                         this.setState({globalmarkers: markerlist})
                     }

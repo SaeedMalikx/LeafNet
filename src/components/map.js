@@ -15,6 +15,7 @@ const Map = ReactMapboxGl({
   accessToken: "",
   doubleClickZoom: false
 });
+
 class Mainmap extends React.Component {
   constructor(props) {
     super(props);
@@ -33,7 +34,8 @@ class Mainmap extends React.Component {
       feedkey: "",
       globalvalue: "",
       feedcommentlist: [],
-      currentcomment: ""
+      currentcomment: "",
+      commentcount: null
     };
   }
 
@@ -55,7 +57,9 @@ class Mainmap extends React.Component {
             'latitude': this.state.addpopuplat,
             'longitude': this.state.addpopuplng,
             'title': this.state.addertitle,
-            'global': false
+            'global': false,
+            'commentcount': 0,
+            'upvotes': 0
         })
     }
     this.setState({openadder: false,allowaddpopup: false,addpopuplat: "" , addpopuplng: ""})
@@ -69,7 +73,10 @@ class Mainmap extends React.Component {
             'longitude': this.state.popuplng,
             'title': this.state.currentitle,
             'feedkey': this.state.feedkey,
-            'userid': user.uid
+            'userid': user.uid,
+            'username': user.email,
+            'commentcount': 0,
+            'upvotes': 0
         })
         firebase.database().ref('global').child('posts').child(this.state.feedkey).set({
             'title': this.state.currentitle,
@@ -91,8 +98,8 @@ class Mainmap extends React.Component {
     }
   }
 
-  leafclick = (lat, lng, title, key, gv) => {
-    this.setState({allowpopup: true, popuplat: lat, popuplng: lng, currentitle: title, feedkey: key, globalvalue: gv})
+  leafclick = (lat, lng, title, key, gv, c) => {
+    this.setState({allowpopup: true, popuplat: lat, popuplng: lng, currentitle: title, feedkey: key, globalvalue: gv, commentcount: c})
   }
 
   clearpopup = () => {
@@ -129,11 +136,20 @@ class Mainmap extends React.Component {
 
   addcomment = () => {
     const user = firebase.auth().currentUser;
+    let commentc = this.state.commentcount + 1
+    this.setState({commentcount: commentc})
     if (user != null) {
         firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').push({
             'body': this.state.currentcomment,
         })
+        firebase.database().ref('users').child(user.uid).child('markers').child(this.state.feedkey).update({
+            'commentcount': commentc
+        })
+        firebase.database().ref('global').child('markers').child(this.state.feedkey).update({
+            'commentcount': commentc
+        })
     }
+    this.setState({currentcomment: ""})
   }
   clusterMarker = (coordinates, pointCount) => (
     <Marker key={coordinates} coordinates={coordinates} >
@@ -156,7 +172,7 @@ class Mainmap extends React.Component {
                 <Cluster ClusterMarkerFactory={this.clusterMarker}>
                   {this.props.markers.map((marker, index)=><Marker
                                                             key={index} 
-                                                            onClick={()=>{this.leafclick(marker.latitude, marker.longitude, marker.title, marker.postkey, marker.globalvalue)}}
+                                                            onClick={()=>{this.leafclick(marker.latitude, marker.longitude, marker.title, marker.postkey, marker.globalvalue, marker.commentcount)}}
                                                             coordinates={[marker.longitude, marker.latitude]}
                                                             ><Popicon/></Marker>)}
                 </Cluster>
@@ -195,7 +211,7 @@ class Mainmap extends React.Component {
             autoDetectWindowHeight={true}
             contentClassName="dialogwidth"
             title={this.state.currentitle}
-            actions={[<input type="text" placeholder="Add a Comment" onChange={this.setcomment}></input>,
+            actions={[<input type="text" placeholder="Add a Comment" onChange={this.setcomment} value={this.state.currentcomment}></input>,
                 <RaisedButton label="Submit" primary={true} onClick={this.addcomment} />]}
           >
                 <List>
