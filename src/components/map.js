@@ -10,10 +10,12 @@ import RaisedButton from 'material-ui/RaisedButton';
 import FloatingActionButton from 'material-ui/FloatingActionButton';
 import {List, ListItem} from 'material-ui/List';
 import Avatar from 'material-ui/Avatar';
+import Badge from 'material-ui/Badge';
 
 const Map = ReactMapboxGl({
   accessToken: "",
-  doubleClickZoom: false
+  doubleClickZoom: false,
+  dragRotate: false,
 });
 
 class Mainmap extends React.Component {
@@ -35,7 +37,8 @@ class Mainmap extends React.Component {
       globalvalue: "",
       feedcommentlist: [],
       currentcomment: "",
-      commentcount: null
+      commentcount: null,
+      center: [-73.985541, 40.757964],
     };
   }
 
@@ -85,6 +88,7 @@ class Mainmap extends React.Component {
             'global': true
         })
     }
+    this.setState({globalvalue: true})
   }
   
   unpublishpost = () => {
@@ -99,11 +103,19 @@ class Mainmap extends React.Component {
   }
 
   leafclick = (lat, lng, title, key, gv, c) => {
-    this.setState({allowpopup: true, popuplat: lat, popuplng: lng, currentitle: title, feedkey: key, globalvalue: gv, commentcount: c})
+    this.setState({
+      allowpopup: true, 
+      popuplat: lat, 
+      popuplng: lng, 
+      currentitle: title, 
+      feedkey: key, 
+      globalvalue: gv, 
+      commentcount: c
+    })
   }
 
   clearpopup = () => {
-    this.setState({popuplat: "", popuplng: "",currentitle: "", feedkey: "", allowpopup: false})
+    this.setState({popuplat: "", popuplng: "",currentitle: "", feedkey: "", allowpopup: false, globalvalue: false})
   }
   clearaddpopup = () => {
     this.setState({addpopuplat: "", addpopuplng: "", allowaddpopup: false})
@@ -165,6 +177,7 @@ class Mainmap extends React.Component {
               style="mapbox://styles/mapbox/light-v9"
               onClick={this.clearpopup}
               onDblClick={this.handleMapClick}
+              center={this.state.center}
               containerStyle={{
                 height: "100vh",
                 width: "100vw"
@@ -174,14 +187,16 @@ class Mainmap extends React.Component {
                                                             key={index} 
                                                             onClick={()=>{this.leafclick(marker.latitude, marker.longitude, marker.title, marker.postkey, marker.globalvalue, marker.commentcount)}}
                                                             coordinates={[marker.longitude, marker.latitude]}
-                                                            ><Popicon/></Marker>)}
+                                                            >
+                                                            <Badge badgeContent={marker.commentcount} primary={true}><Popicon/></Badge>
+                                                            </Marker>)}
                 </Cluster>
                 {this.state.allowpopup ?(<Popup
                   coordinates={[this.state.popuplng,this.state.popuplat]}
                   offset={{
                     'bottom-left': [12, -38],  'bottom': [0, -38], 'bottom-right': [-12, -38]
                   }}>
-                  <p>{this.state.currentitle}</p>
+                  <h3>{this.state.currentitle}</h3>
                   <RaisedButton label="Comments" primary={true}  onClick={this.openfeed}/>
                   {this.state.globalvalue ? (<RaisedButton label="UnPublish" secondary={true}  onClick={this.unpublishpost}/>):(<RaisedButton label="Publish" secondary={true}  onClick={this.publishpost}/>)}
                 </Popup>):(<div></div>)}
@@ -190,7 +205,7 @@ class Mainmap extends React.Component {
                   offset={{
                     'bottom-left': [12, -38],  'bottom': [0, -38], 'bottom-right': [-12, -38]
                   }}>
-                  <p>Add a Note Here</p>
+                  <h3>Add a Note Here</h3>
                   <Popcancel onClick={this.clearaddpopup}/>
                   <Adder onClick={this.openadder}/>
                 </Popup>):(<div></div>)}

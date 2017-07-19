@@ -74,7 +74,7 @@ export default class firebaselogin extends React.Component {
                             disabled={true}
                             leftIcon={<Popicon />}
                         >
-                            {this.props.markers.length} Bubbles/Leafs/Markers
+                            {this.props.markers.length} Leafs
                         </ListItem>
                         <button className="buttonsignup" onClick={this.signout} >Sign Out</button>
                     </List>
@@ -84,7 +84,7 @@ export default class firebaselogin extends React.Component {
                     
                         <h3>Email</h3>
                         <input type="text" placeholder="Email" onChange={this.setuser}></input>
-                        
+
                         <h3>Password</h3>
                         <input type="password" placeholder="Password" onChange={this.setpass}></input>
 

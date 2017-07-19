@@ -3,18 +3,20 @@ import ReactMapboxGl, {Popup, Cluster, Marker } from "react-mapbox-gl";
 import firebase from 'firebase';
 
 
-import Popmore from 'material-ui/svg-icons/navigation/arrow-forward'
 import Popicon from 'material-ui/svg-icons/action/announcement'
-import Upvote from 'material-ui/svg-icons/navigation/arrow-upward'
+import Upvote from 'material-ui/svg-icons/maps/navigation'
 import Dialog from 'material-ui/Dialog';
 import RaisedButton from 'material-ui/RaisedButton';
 import FloatingActionButton from 'material-ui/FloatingActionButton';
 import {List, ListItem} from 'material-ui/List';
 import Avatar from 'material-ui/Avatar';
+import Snackbar from 'material-ui/Snackbar';
+import Badge from 'material-ui/Badge';
 
 const Map = ReactMapboxGl({
   accessToken: "",
-  dragRotate: false
+  dragRotate: false,
+  doubleClickZoom: false,
 });
 class Mainmap extends React.Component {
   constructor(props) {
@@ -27,15 +29,20 @@ class Mainmap extends React.Component {
       openfeed: false,
       currenttitle: "",
       feedkey: "",
+      postuserid: null,
       feedcommentlist: [],
       currentcomment: "",
       commentcount: null,
       upvotes: null,
-      showalreadyupvoted: false
+      showalreadyupvoted: false,
+      showupvoted: false,
+      center: [-73.985541, 40.757964],
+      zoom: [9]
     };
   }
 
   openfeed = () => {
+    this.setState({openfeed: true, feedcommentlist: []})
     firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').on('value', snap =>{
                 
                 if (snap.val()) {
@@ -52,7 +59,6 @@ class Mainmap extends React.Component {
                   this.setState({feedcommentlist: []})
                 }
     });
-    this.setState({openfeed: true})
   }
 
   setcomment = (comment) => {
@@ -67,7 +73,7 @@ class Mainmap extends React.Component {
         firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').push({
             'body': this.state.currentcomment,
         })
-        firebase.database().ref('users').child(user.uid).child('markers').child(this.state.feedkey).update({
+        firebase.database().ref('users').child(this.state.postuserid).child('markers').child(this.state.feedkey).update({
             'commentcount': commentc
         })
         firebase.database().ref('global').child('markers').child(this.state.feedkey).update({
@@ -81,7 +87,7 @@ class Mainmap extends React.Component {
       const user = firebase.auth().currentUser;
       if (user != null) {
         let feedkey = this.state.feedkey
-        let upvotecheck = firebase.database().ref('users').child(user.uid).child('upvotes').once("value")
+        firebase.database().ref('users').child(user.uid).child('upvotes').once("value")
             .then(snapshot => {
                 if(snapshot.hasChild(feedkey)){
                   this.setState({showalreadyupvoted: true}) 
@@ -94,9 +100,10 @@ class Mainmap extends React.Component {
 
   commitupvote = () => {
     let upvotec = this.state.upvotes + 1
+    this.setState({showupvoted: true, upvotes: upvotec})
     const user = firebase.auth().currentUser;
       if (user != null) {
-        firebase.database().ref('users').child(user.uid).child('markers').child(this.state.feedkey).update({
+        firebase.database().ref('users').child(this.state.postuserid).child('markers').child(this.state.feedkey).update({
                 'upvotes': upvotec
             })
             firebase.database().ref('users').child(user.uid).child('upvotes').child(this.state.feedkey).set({
@@ -107,18 +114,32 @@ class Mainmap extends React.Component {
             })
     }
   }
-  closefeed = () => {this.setState({openfeed: false})}
+  closefeed = () => {
+      firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').off('value',snap=>{})
+      this.setState({openfeed: false})
+  }
 
   handleMapClick = (map, evt) => {
     this.setState({addpopuplat: evt.lngLat.lat , addpopuplng: evt.lngLat.lng})
   }
 
-  leafclick = (lat, lng, title, key, c, up) => {
-    this.setState({allowpopup: true, popuplat: lat, popuplng: lng, currentitle: title, feedkey: key, commentcount: c, upvotes: up})
+  leafclick = (lat, lng, title, key, c, up, id) => {
+    this.setState({
+        allowpopup: true, 
+        popuplat: lat, 
+        popuplng: lng, 
+        currentitle: title, 
+        feedkey: key, 
+        commentcount: c, 
+        upvotes: up, 
+        postuserid: id, 
+        showalreadyupvoted: false, 
+        showupvoted: false
+    })
   }
 
   clearpopup = () => {
-    this.setState({popuplat: "", popuplng: "",currentitle: "", feedkey: "", allowpopup: false})
+    this.setState({popuplat: "", popuplng: "",currentitle: "", feedkey: "", allowpopup: false, showalreadyupvoted: false, showupvoted: false})
   }
   clusterMarker = (coordinates, pointCount) => (
     <Marker key={coordinates} coordinates={coordinates} >
@@ -134,25 +155,29 @@ class Mainmap extends React.Component {
           <Map
               style="mapbox://styles/mapbox/light-v9"
               onClick={this.clearpopup}
+              center={this.state.center}
+              zoom={this.state.zoom}
               containerStyle={{
                 height: "100vh",
                 width: "100vw"
               }}>
                 <Cluster ClusterMarkerFactory={this.clusterMarker}>
                   {this.props.globalmarkers.map((marker, index)=><Marker
-                                                            key={index} 
-                                                            onClick={()=>{this.leafclick(marker.latitude, marker.longitude, marker.title, marker.feedkey, marker.commentcount, marker.upvotes)}}
-                                                            coordinates={[marker.longitude, marker.latitude]}
-                                                            ><Popicon/></Marker>)}
+                                                                key={index} 
+                                                                onClick={()=>{this.leafclick(marker.latitude, marker.longitude, marker.title, marker.feedkey, marker.commentcount, marker.upvotes, marker.userid)}}
+                                                                coordinates={[marker.longitude, marker.latitude]}
+                                                                >
+                                                                <Badge badgeContent={marker.commentcount} primary={true}><Popicon/></Badge>
+                                                                </Marker>)}
                 </Cluster>
                 {this.state.allowpopup ?(<Popup
                   coordinates={[this.state.popuplng,this.state.popuplat]}
                   offset={{
                     'bottom-left': [12, -38],  'bottom': [0, -38], 'bottom-right': [-12, -38]
                   }}>
-                  <p>{this.state.currentitle}</p>
-                  <Upvote onClick={this.upvotepost}/>
-                  <Popmore onClick={this.openfeed}/>
+                  <h3>{this.state.currentitle}</h3>
+                  <RaisedButton label={this.state.upvotes} primary={true} onClick={this.upvotepost} icon={<Upvote />} />
+                  <RaisedButton label={this.state.commentcount} secondary={true}  onClick={this.openfeed}  icon={<Popicon />}/>
                 </Popup>):(<div></div>)}
             </Map>
 
@@ -183,6 +208,16 @@ class Mainmap extends React.Component {
                 </List>
           </Dialog>
 
+          <Snackbar
+            open={this.state.showalreadyupvoted}
+            message="Already Upvoted "
+            autoHideDuration={1000}
+          />
+          <Snackbar
+            open={this.state.showupvoted}
+            message="Upvoted"
+            autoHideDuration={1000}
+          />
       </div>
     )
   }
