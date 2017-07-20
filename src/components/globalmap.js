@@ -18,11 +18,12 @@ const Map = ReactMapboxGl({
   dragRotate: false,
   doubleClickZoom: false,
 });
-class Mainmap extends React.Component {
+class GlobalMap extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
+      globalmarkers: [],
       allowpopup: false,
       popuplat: "",
       popuplng: "",
@@ -41,8 +42,36 @@ class Mainmap extends React.Component {
     };
   }
 
+  componentDidMount(){
+      const user = firebase.auth().currentUser;
+      if (user != null) {
+           
+            firebase.database().ref('global').child('markers').on('value', snap =>{
+                
+                if (snap.val()) {
+                    let marks = snap.val();
+                    let markerlist = [];
+                    for (let mark in marks) {
+                        markerlist.push({
+                            feedkey: mark,
+                            latitude: marks[mark].latitude,
+                            longitude: marks[mark].longitude,
+                            title: marks[mark].title,
+                            userid: marks[mark].userid,
+                            commentcount: marks[mark].commentcount,
+                            upvotes: marks[mark].upvotes
+                        })
+                        this.setState({globalmarkers: markerlist})
+                    }
+                } 
+            });
+        } else {
+          this.setState({globalmarkers: []})
+        }
+  }
+
   openfeed = () => {
-    this.setState({openfeed: true, feedcommentlist: []})
+    this.setState({openfeed: true, feedcommentlist: [], showupvoted: false})
     firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').on('value', snap =>{
                 
                 if (snap.val()) {
@@ -115,7 +144,7 @@ class Mainmap extends React.Component {
     }
   }
   closefeed = () => {
-      firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').off('value',snap=>{})
+      firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').off('value')
       this.setState({openfeed: false})
   }
 
@@ -149,6 +178,17 @@ class Mainmap extends React.Component {
     </Marker>
   );
 
+  componentWillUnmount(){
+      const user = firebase.auth().currentUser;
+      if (user != null) {
+           
+            firebase.database().ref('global').child('markers').off('value')
+            if(this.state.feedkey){
+           firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').off('value')
+            }
+        } 
+  }
+
   render() {
     return (
       <div>
@@ -162,7 +202,7 @@ class Mainmap extends React.Component {
                 width: "100vw"
               }}>
                 <Cluster ClusterMarkerFactory={this.clusterMarker}>
-                  {this.props.globalmarkers.map((marker, index)=><Marker
+                  {this.state.globalmarkers.map((marker, index)=><Marker
                                                                 key={index} 
                                                                 onClick={()=>{this.leafclick(marker.latitude, marker.longitude, marker.title, marker.feedkey, marker.commentcount, marker.upvotes, marker.userid)}}
                                                                 coordinates={[marker.longitude, marker.latitude]}
@@ -223,4 +263,4 @@ class Mainmap extends React.Component {
   }
 }
 
-export default Mainmap
+export default GlobalMap

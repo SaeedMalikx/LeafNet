@@ -70,12 +70,6 @@ export default class firebaselogin extends React.Component {
                         >
                             {this.props.userid}
                         </ListItem>
-                        <ListItem
-                            disabled={true}
-                            leftIcon={<Popicon />}
-                        >
-                            {this.props.markers.length} Leafs
-                        </ListItem>
                         <button className="buttonsignup" onClick={this.signout} >Sign Out</button>
                     </List>
                 </div>

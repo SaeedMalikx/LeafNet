@@ -23,6 +23,7 @@ class Mainmap extends React.Component {
     super(props);
 
     this.state = {
+      markers: [],
       allowpopup: false,
       allowaddpopup: false,
       popuplat: "",
@@ -41,7 +42,35 @@ class Mainmap extends React.Component {
       center: [-73.985541, 40.757964],
     };
   }
-
+  componentDidMount(){
+    const user = firebase.auth().currentUser;
+    if (user != null) {
+            this.setState({isloggedin: true, userid: user.email})
+            firebase.database().ref('users').child(user.uid).child('markers').on('value', snap =>{
+                
+                if (snap.val()) {
+                    let marks = snap.val();
+                    let markerlist = [];
+                    for (let mark in marks) {
+                        markerlist.push({
+                            postkey: mark,
+                            latitude: marks[mark].latitude,
+                            longitude: marks[mark].longitude,
+                            title: marks[mark].title,
+                            globalvalue: marks[mark].global,
+                            commentcount: marks[mark].commentcount,
+                            upvotes: marks[mark].upvotes
+                        })
+                        this.setState({markers: markerlist})
+                    }
+                } else {
+                  this.setState({markers: []})
+                }
+            });
+        } else {
+          this.setState({isloggedin: false, markers: [], userid: ""})
+        }
+  }
   openadder = () => {this.setState({openadder: true})}
   closefeed = () => {this.setState({openfeed: false, openadder: false})}
 
@@ -170,6 +199,16 @@ class Mainmap extends React.Component {
         </FloatingActionButton>
     </Marker>
   );
+
+    componentWillUnmount() {
+       const user = firebase.auth().currentUser;
+    if (user != null) {
+            firebase.database().ref('users').child(user.uid).child('markers').off('value')
+            if(this.state.feedkey){
+             firebase.database().ref('global').child('posts').child(this.state.feedkey).child('comments').off('value')
+            }
+        } 
+  }
   render() {
     return (
       <div>
@@ -183,7 +222,7 @@ class Mainmap extends React.Component {
                 width: "100vw"
               }}>
                 <Cluster ClusterMarkerFactory={this.clusterMarker}>
-                  {this.props.markers.map((marker, index)=><Marker
+                  {this.state.markers.map((marker, index)=><Marker
                                                             key={index} 
                                                             onClick={()=>{this.leafclick(marker.latitude, marker.longitude, marker.title, marker.postkey, marker.globalvalue, marker.commentcount)}}
                                                             coordinates={[marker.longitude, marker.latitude]}
@@ -191,6 +230,7 @@ class Mainmap extends React.Component {
                                                             <Badge badgeContent={marker.commentcount} primary={true}><Popicon/></Badge>
                                                             </Marker>)}
                 </Cluster>
+
                 {this.state.allowpopup ?(<Popup
                   coordinates={[this.state.popuplng,this.state.popuplat]}
                   offset={{
@@ -200,6 +240,7 @@ class Mainmap extends React.Component {
                   <RaisedButton label="Comments" primary={true}  onClick={this.openfeed}/>
                   {this.state.globalvalue ? (<RaisedButton label="UnPublish" secondary={true}  onClick={this.unpublishpost}/>):(<RaisedButton label="Publish" secondary={true}  onClick={this.publishpost}/>)}
                 </Popup>):(<div></div>)}
+
                 {this.state.allowaddpopup ? (<Popup
                   coordinates={[this.state.addpopuplng,this.state.addpopuplat]}
                   offset={{
